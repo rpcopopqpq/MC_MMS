@@ -164,8 +164,94 @@ public class MessageParser {
 	private String hexSignedData = null;
 	private MMSLog mmsLog = null;
 	private MMSLogForDebug mmsLogForDebug = null;
-	private boolean isRealtimeLogReq = false;
+	
+	private String visitSc = null;
+	private String homeMms = null;
+	private boolean isRegisterVisit = false;
+	private String visitMmsHostName;
+	private String visitMmsMrn;
+	private String visitMmsPort;
+	private boolean isRequestRemoveAwayScInfo;
+	private boolean isRequestRemoveMrn;
+	private boolean isService;
+	private boolean isRelayingToVisitedSc;
+	private boolean isWritingForVisitedSc;
+	
+	public String getVisitSc() {
+		return visitSc;
+	}
 
+	public void setVisitSc(String visitSc) {
+		this.visitSc = visitSc;
+	}
+
+	public String getHomeMms() {
+		return homeMms;
+	}
+
+	public void setHomeMms(String homeMms) {
+		this.homeMms = homeMms;
+	}
+	
+	public boolean isRegisterVisit() {
+		return isRegisterVisit;
+	}
+	
+	public String getVisitMmsMrn() {
+		return visitMmsMrn;
+	}
+	
+	public String getVisitMmsPort() {
+		return visitMmsPort;
+	}
+	
+	public void setVisitMmsPort(String visitMmsPort) {
+		this.visitMmsPort = visitMmsPort;
+	}
+
+	public void setRequestRemoveAwayScInfo() {
+		this.isRequestRemoveAwayScInfo = true;
+	}
+	
+	public boolean isRequestRemoveAwayScInfo() {
+		return isRequestRemoveAwayScInfo;
+	}
+	
+	public boolean isRequestRemoveMrn() {
+		return this.isRequestRemoveMrn;
+	}
+	
+	public String getVisitMmsHostName() {
+		return visitMmsHostName;
+	}
+	
+	public void setVisitMmsHostName(String visitMmsHostName) {
+		this.visitMmsHostName = visitMmsHostName;
+	}
+	
+	public void setIsService(boolean isService) {
+		this.isService = isService;
+	}
+	public boolean isService() {
+		return isService;
+	}
+	
+	public boolean isRelayingToVisitedSc() {
+		return isRelayingToVisitedSc;
+	}
+	public void setIsRelayingToVisitedSc(boolean isRelayingToVisitedSc) {
+		this.isRelayingToVisitedSc = isRelayingToVisitedSc;
+	}
+	
+	public boolean isWritingForVisitedSc() {
+		return isWritingForVisitedSc;
+	}
+	
+	public void setIsWritingForVisitedSc(boolean isWritingForVisitedSc) {
+		this.isWritingForVisitedSc =  isWritingForVisitedSc;
+	}
+	
+	private boolean isRealtimeLogReq = false;
 
 	MessageParser(String sessionId){
 		this.sessionId = sessionId;
@@ -188,6 +274,15 @@ public class MessageParser {
 		seqNum = -1;
 		mmsLog = MMSLog.getInstance();
 		mmsLogForDebug = MMSLogForDebug.getInstance();
+		
+		///isRegisterVisit = false;
+		///visitMmsHostName = null;
+		visitMmsMrn = null;
+		isRequestRemoveAwayScInfo = false;
+		isRequestRemoveMrn = false;
+		///isService = false;
+		isRelayingToVisitedSc = false;
+		isWritingForVisitedSc = false;
 	}
 	
 	void parseMessage(ChannelHandlerContext ctx, FullHttpRequest req) throws NullPointerException, NumberFormatException, IOException{
@@ -204,6 +299,33 @@ public class MessageParser {
 	    }
 		srcMRN = req.headers().get("srcMRN");
 		dstMRN = req.headers().get("dstMRN");
+		
+		visitSc = req.headers().get("visitSc");
+		homeMms = req.headers().get("homeMms");
+		
+		if(dstMRN != null && httpMethod == HttpMethod.POST && (uri.equals("/relay-visited"))) {
+			isWritingForVisitedSc = true;
+		}
+		if(dstMRN != null && httpMethod == HttpMethod.POST && (uri.equals("/register-visiting"))) {
+			isRegisterVisit = true;
+			visitMmsHostName = inetaddress.getHostName();
+			visitMmsMrn = req.headers().get("visitMmsMrn");
+			visitMmsPort = req.headers().get("visitMmsPort");
+			svcMRN = req.headers().get("dstMRN");
+		}
+		if(dstMRN != null && httpMethod == HttpMethod.POST && (uri.equals("/remove-mrn"))) {
+			/**
+			 * visited SC의 home mms에서 요청한 uri : /remove-mrn
+			 * this mms는 visited SC가 visited했던 mms이다.
+			 * v SC가 home MMS에 다시 접속했으므로 v MMS에 VL_ list에서 삭제하도록 요청한 uri이다.
+			 */
+			visitMmsHostName = inetaddress.getHostName();//v SC의 home MMS의 host name이다. 이 host로 http response를 보내기 위해 쓰인다.
+			visitMmsMrn = req.headers().get("visitMmsMrn");
+			visitMmsPort = req.headers().get("visitMmsPort");
+			///visitSc = req.headers().get("srcMRN"); visitSc null여부로 처리하므로 여기선 안됨
+			isRequestRemoveMrn = true;
+			
+		}
 		
 		if (srcMRN != null && dstMRN != null && dstMRN.equals(MMSConfiguration.getMmsMrn()) && httpMethod == HttpMethod.POST && (uri.equals("/polling")||uri.equals("/long-polling"))) {
 			//When polling
@@ -362,13 +484,20 @@ public class MessageParser {
 			JSONObject json = new JSONObject();
 			JSONParser parser = new JSONParser();
 			
+			if(dstInfo.startsWith("[")) {
+				dstInfo = dstInfo.substring(0, dstInfo.length()-1);
+				dstInfo = dstInfo.substring(1, dstInfo.length());
+			}
 			json = (JSONObject) parser.parse(dstInfo);
 			
 			dstModel = (String) json.get("connType");
 			if (dstModel.equals("push")) {
 				dstIP = (String) json.get("IPAddr");
 				dstMRN = (String) json.get("dstMRN");
-				dstPort = Integer.parseInt((String) json.get("portNum"));
+				Object obj = json.get("portNum");
+				if(null!=obj) {
+				dstPort = Integer.parseInt(obj.toString() );
+				}
 			}
 			else if (dstModel.equals("polling")) {
 				dstMRN = (String) json.get("dstMRN");

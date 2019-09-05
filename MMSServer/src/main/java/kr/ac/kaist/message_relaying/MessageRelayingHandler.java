@@ -282,25 +282,33 @@ Modifier : Jaehee ha (jaehee.ha@kaist.ac.kr)
 */
 /* -------------------------------------------------------- */
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import kr.ac.kaist.message_casting.MessageCastingHandler;
 import kr.ac.kaist.message_relaying.MRH_MessageOutputChannel.ConnectionThread;
 import kr.ac.kaist.mms_server.ErrorCode;
-import kr.ac.kaist.mms_server.ErrorResponseException;
+import kr.ac.kaist.mms_server.MMSConfiguration;
 import kr.ac.kaist.mms_server.MMSLog;
 import kr.ac.kaist.mms_server.MMSLogForDebug;
 import kr.ac.kaist.mms_server.MMSRestAPIHandler;
 import kr.ac.kaist.seamless_roaming.SeamlessRoamingHandler;
+import kr.co.nexsys.HomeMmsHttpSend;
 
 
 public class MessageRelayingHandler  {
@@ -322,14 +330,16 @@ public class MessageRelayingHandler  {
     private ConnectionThread thread = null;
     
     private boolean isErrorOccured = false;
+    
+	private HomeMmsHttpSend httpSendToMms;
 	
-	public MessageRelayingHandler(MRH_MessageInputChannel.ChannelBean bean) {		
+	public MessageRelayingHandler(MRH_MessageInputChannel.ChannelBean bean) {
 		
 		this.bean = bean;
 		
 		initializeModule();
 		initializeSubModule();
-		
+				///System.out.println("visited mms :=="+parser.getVisitMms());
 		MessageTypeDecider.msgType type = null;
 		try {
 			bean.setType(typeDecider.decideType(bean.getParser(), mch));
@@ -373,6 +383,18 @@ public class MessageRelayingHandler  {
 				}
 			}
 		}
+	}
+	private void initalizeVisitedMms() {
+		String srcMrn        = bean.getParser().getSrcMRN();
+		String targetMmsIp   = bean.getParser().getVisitMmsHostName();
+		String targetMmsPort = bean.getParser().getVisitMmsPort();
+		String dstMrn        = bean.getParser().getDstMRN();
+		String visitMmsMrn   = bean.getParser().getVisitMmsMrn();
+		String httpPort      = Integer.toString(MMSConfiguration.getHttpPort());
+		final String uri     = "/relay-visited";
+		String content       = bean.getReq().content().toString(Charset.forName("UTF-8"));
+		logger.debug("[{}]==:contents:=={}\r{}", bean.getSessionId(), content);
+		this.httpSendToMms   = new HomeMmsHttpSend(srcMrn, targetMmsIp, targetMmsPort, dstMrn, visitMmsMrn, httpPort, uri, content);
 	}
 	
 	private void initializeModule() {
@@ -523,6 +545,93 @@ public class MessageRelayingHandler  {
 			message = mch.castMsgsToMultipleCS(bean, bean.getReq().content().toString(Charset.forName("UTF-8")).trim());
 		} */
 		
+		else if (bean.getType() == MessageTypeDecider.msgType.RELAYING_TO_VISITED_SC) {
+			initalizeVisitedMms();
+			httpSendToMms.sendToVisitedMmsInfo();
+			message = String.format("[%5s] %s", "200", "Message sent to visited MMS").toString().getBytes(Charset.forName("UTF-8"));
+			try {
+    			if (message != null) {
+					bean.getOutputChannel().replyToSender(bean, message);
+				}
+    			else {
+    				bean.getOutputChannel().replyToSender(bean, "Message sent to visited MMS.".getBytes(Charset.forName("UTF-8")));
+				}
+			} catch (IOException e) {
+				mmsLog.infoException(logger, bean.getSessionId(), ErrorCode.CLIENT_DISCONNECTED.toString(), e, 5);
+			}
+    		return;
+		}
+		else if (bean.getType() == MessageTypeDecider.msgType.WRITING_FOR_VISITED_SC) {
+			
+			String srcMrn        = bean.getParser().getSrcMRN();
+			String dstMrn        = bean.getParser().getDstMRN();
+			String homeMmsMrn   = bean.getParser().getHomeMms();
+			String content       = bean.getReq().content().toString(Charset.forName("UTF-8"));
+			Object obj = bean.getReq();
+			
+			logger.debug("visited sc for VDES messages ::==={}\r\r", content);
+			logger.debug("recived messages for visited sc... and start writing to file... {}", content);
+			message = String.format("[%5s] %s", "200", "recived messages for visited sc... and start writing to file...").toString().getBytes(Charset.forName("UTF-8"));
+			
+			//TODO refactoring it
+			///writing file...
+			
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("srcMRN", srcMrn);
+			map.put("dstMRN", dstMrn);
+			map.put("homeMmsMrn", homeMmsMrn);
+			map.put("content", content);
+			map.put("reqHeaders", obj.toString());
+
+			String jsonStr = JSONObject.toJSONString(map);
+			jsonStr = jsonStr.replaceAll(",\"", System.lineSeparator()+"\"");
+			
+			String ufn = (bean.getParser().getDstMRN().toString()).replaceAll("[:\\\\/*?|<>]", "_");
+			LocalDateTime now = LocalDateTime.now();
+			String format3="";
+			try {
+				format3 = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH));
+				File desti = new File("./vdes_files");
+				if (!desti.exists()) {
+					desti.mkdirs();
+				}
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			String fileName="./vdes_files/"+format3+"_"+ufn+".req";
+			FileOutputStream outputStream=null;
+			try {
+				outputStream = new FileOutputStream(fileName);
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			}
+			byte[] strToBytes = jsonStr.getBytes();
+			try {
+				outputStream.write(strToBytes);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}finally {
+				if(outputStream!=null) {
+					try {
+						outputStream.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			try {
+    			if (message != null) {
+					bean.getOutputChannel().replyToSender(bean, message);
+				}
+    			else {
+    				bean.getOutputChannel().replyToSender(bean, "recived messages for visited sc... and start writing to file....".getBytes(Charset.forName("UTF-8")));
+				}
+			} catch (IOException e) {
+				mmsLog.infoException(logger, bean.getSessionId(), ErrorCode.CLIENT_DISCONNECTED.toString(), e, 5);
+			}
+    		return;
+		}
 		
 		//Below code MUST be 'if' statement not 'else if'. 
 		if (bean.getType() == MessageTypeDecider.msgType.RELAYING_TO_SERVER_SEQUENTIALLY || bean.getType() == MessageTypeDecider.msgType.RELAYING_TO_SC_SEQUENTIALLY) {
@@ -619,7 +728,41 @@ public class MessageRelayingHandler  {
 			mmsLog.info(logger, bean.getSessionId(), ErrorCode.INVALID_HTTP_METHOD.toString());
 			message = ErrorCode.INVALID_HTTP_METHOD.getUTF8Bytes();
 			//logger.info("test "+message);
-		} 
+		}
+		
+		/**
+		 * visited SC requesting by VDES req file.
+		 */
+		else if (bean.getType() == MessageTypeDecider.msgType.VISITED) {
+			//isErrorOccured = true;///정상적이지만 그냥 flag setting
+			mmsLog.info(logger, bean.getSessionId(), "visited SC info registration success.");
+			///message = ErrorCode.VISITED_REGISTER_SUCCESS.getUTF8Bytes();
+			message = String.format("[%5s] %s", "200", "visited SC info registration success.").toString().getBytes(Charset.forName("UTF-8"));
+			try {
+				bean.getOutputChannel().replyToSender(bean, message);
+			} catch (IOException e) {
+				mmsLog.infoException(logger, bean.getSessionId(), "visited SC info registration faild.", e, 5);
+			}
+			return;
+		}else if (bean.getType() == MessageTypeDecider.msgType.AWAY_TO_OTHER_MMS) {
+			mmsLog.info(logger, bean.getSessionId(), "away SC info registration success.");
+			message = String.format("[%5s] %s", "200", "away SC info registration success.").toString().getBytes(Charset.forName("UTF-8"));
+			try {
+				bean.getOutputChannel().replyToSender(bean, message);
+			} catch (IOException e) {
+				mmsLog.infoException(logger, bean.getSessionId(), "visited SC info registration faild.", e, 5);
+			}
+			return;
+		}else if (bean.getType() == MessageTypeDecider.msgType.REMOVE_MRN) {
+			mmsLog.info(logger, bean.getSessionId(), "visited SC mrn remove success.");
+			message = String.format("[%5s] %s", "200", "visited SC mrn remove success.").toString().getBytes(Charset.forName("UTF-8"));
+			try {
+				bean.getOutputChannel().replyToSender(bean, message);
+			} catch (IOException e) {
+				mmsLog.infoException(logger, bean.getSessionId(), "visited SC mrn remove faild.", e, 5);
+			}
+			return;
+		}
 
 		if (isErrorOccured || message != null) {
 			try {

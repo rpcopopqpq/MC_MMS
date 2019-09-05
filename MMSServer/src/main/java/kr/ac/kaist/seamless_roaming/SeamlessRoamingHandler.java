@@ -177,6 +177,9 @@ public class SeamlessRoamingHandler {
 
 			isClientVerified = cltVerifier.verifyClient(srcMRN, bean.getParser().getHexSignedData());
 			
+			//TODO///test code
+			isClientVerified = true;
+			
 //				if (cltVerifier instanceof ClientVerifierTest) {
 //					byte[] verificationTime = ((ClientVerifierTest) cltVerifier).verificationTimeJSONString();
 //					outputChannel.replyToSender(ctx, verificationTime, isRealtimeLog);

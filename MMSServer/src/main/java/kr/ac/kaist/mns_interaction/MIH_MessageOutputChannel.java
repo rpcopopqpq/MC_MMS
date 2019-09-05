@@ -52,11 +52,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import kr.ac.kaist.mms_server.ErrorCode;
 import kr.ac.kaist.mms_server.MMSConfiguration;
 import kr.ac.kaist.mms_server.MMSLog;
@@ -73,8 +84,78 @@ class MIH_MessageOutputChannel {
 		mmsLog = MMSLog.getInstance();
 	}
 	
+	public static class MessageBlockingQue {
+		public static BlockingQueue<String> queue;// = new LinkedBlockingQueue<String>();
+		
+		
+		MessageBlockingQue() {
+			queue = new LinkedBlockingQueue<String>();
+		}
 
-	String sendToMNS(String request) {
+		public static void setQueue(BlockingQueue<String> msg) {
+			queue = msg;
+		}
+
+		public static BlockingQueue<String> getQueue() {
+			return queue;
+		}
+	}
+	String sendToMNS(
+			String req
+			///StringBuffer req
+			) {
+		new MessageBlockingQue();
+		
+		
+		String queryReply = null;
+		
+		EventLoopGroup group = new NioEventLoopGroup();
+		try {
+			Bootstrap bootStrap = new Bootstrap();
+			bootStrap.group(group).channel(NioSocketChannel.class)
+					.remoteAddress(new InetSocketAddress(MMSConfiguration.getMnsHost(), MMSConfiguration.getMnsPort()))
+					.handler(new ChannelInitializer<SocketChannel>() {
+						@Override
+						public void initChannel(SocketChannel ch) throws Exception {
+							ch.pipeline().addLast(
+									
+									new MnsClientHandler(req)
+									
+									);
+						}
+					});
+			ChannelFuture chnFuture = null;
+			try {
+				chnFuture = bootStrap.connect().sync();
+				chnFuture.channel().closeFuture().sync();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} finally {
+			try {
+				group.shutdownGracefully().sync();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		int siz = MessageBlockingQue.getQueue().size();
+		StringBuffer sb = new StringBuffer("");
+		
+		for(int i=0; i<siz; i++ ) {
+			sb.append(MessageBlockingQue.getQueue().poll());
+		}
+		queryReply = sb.toString();
+		logger.debug("\r\r\rpolllllllllll{}\r\r", sb.toString());
+		logger.debug("\r\rreply result================={}\r",queryReply);
+		return queryReply;
+	}
+
+	@Deprecated
+	String sendToMNS(
+			//String request
+			StringBuffer request
+			) {
 		
 		Socket MNSSocket = null;
 		PrintWriter pw = null;	

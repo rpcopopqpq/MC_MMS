@@ -165,6 +165,11 @@ public class MessageTypeDecider {
 			GEOCASTING_CIRCLE,
 			GEOCASTING_POLYGON,
 			REST_API
+			,VISITED
+			,AWAY_TO_OTHER_MMS
+			,REMOVE_MRN
+			,RELAYING_TO_VISITED_SC
+			,WRITING_FOR_VISITED_SC
 	}
 
 	
@@ -300,7 +305,21 @@ public class MessageTypeDecider {
 			}
 		 	return msgType.UNKNOWN_MRN;
 		}
-    	
+		else if(parser.getVisitSc()!=null) {
+			return msgType.VISITED;
+		}
+		else if(parser.getVisitMmsMrn()!=null) {
+			return msgType.AWAY_TO_OTHER_MMS;
+		}
+		else if(parser.isRequestRemoveMrn()) {
+			return msgType.REMOVE_MRN;
+		}
+		else if(parser.isRelayingToVisitedSc()) {
+			return msgType.RELAYING_TO_VISITED_SC;
+		}
+		else if(parser.isWritingForVisitedSc()) {
+			return msgType.WRITING_FOR_VISITED_SC;
+		}
 //    	When relaying
     	else {
     		String dstInfo = mch.queryMNSForDstInfo(srcMRN, dstMRN, parser.getSrcIP());
@@ -351,7 +370,7 @@ public class MessageTypeDecider {
         	
         	return msgType.UNKNOWN_MRN;
         	
-    	} 
+    	}
 		/*else {
     		return UNKNOWN_HTTP_TYPE;
     	}*/

@@ -153,7 +153,11 @@ Modifier : Jaehee ha (jaehee.ha@kaist.ac.kr)
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,11 +175,13 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import kr.ac.kaist.message_relaying.MRH_MessageOutputChannel.ConnectionThread;
 import kr.ac.kaist.mms_server.ChannelTerminateListener;
 import kr.ac.kaist.mms_server.ErrorCode;
+import kr.ac.kaist.mms_server.MMSConfiguration;
 import kr.ac.kaist.mms_server.MMSLog;
 import kr.ac.kaist.mms_server.MMSLogForDebug;
 import kr.ac.kaist.mns_interaction.MNSInteractionHandler;
-import io.netty.util.ReferenceCountUtil;
-import kr.ac.kaist.seamless_roaming.SeamlessRoamingHandler;
+import kr.co.nexsys.HomeMmsHttpSend;
+import kr.co.nexsys.HomeMmsService;
+import kr.com.nexsys.distributed.HomeManager;
 
 import java.io.IOException;
 
@@ -195,6 +201,7 @@ public class MRH_MessageInputChannel extends SimpleChannelInboundHandler<FullHtt
     private ChannelBean bean = null;
 	
     private String duplicateId="";
+    
 
 	public MRH_MessageInputChannel(String protocol) {
 		super();
@@ -247,6 +254,7 @@ public class MRH_MessageInputChannel extends SimpleChannelInboundHandler<FullHtt
 			sessionId = ctx.channel().id().asShortText();
 			SessionManager.putSessionInfo(sessionId, "");
 			
+			logger.debug("\r------------------{}////---------------------",sessionId);
 			this.parser = new MessageParser(sessionId);
 			bean = new ChannelBean(protocol, ctx, req, sessionId, parser);
 			bean.retain();
@@ -269,10 +277,268 @@ public class MRH_MessageInputChannel extends SimpleChannelInboundHandler<FullHtt
 
     		ctx.channel().attr(TERMINATOR).set(new LinkedList<ChannelTerminateListener>());
     		
-    		
-    		
-            relayingHandler = new MessageRelayingHandler(bean);
-			//System.out.println("Successfully processed");
+    		/**
+    		 * 여기서부터 visited SC 처리하는 source code
+    		 * 완성된 후 VisiteManager.java로 이동
+    		 */
+    		HomeMmsService homeMmsService = new HomeMmsService();
+			
+			String srcMrn = parser.getSrcMRN();
+			/**
+			 * setting visited mms info
+			 * 
+			 * visited SC의 요청(현재 json file로 요청 여부 판단)은 반드시 visited 상태(file 내visitSc정보가 반드시 있어야 됨)이므로 HomeMms 처리 필요 없다
+			 */
+			String visitSc = null;
+			
+			visitSc = parser.getVisitSc();
+			
+			boolean myChildSc = homeMmsService.findClientInfo(visitSc);
+
+			// if destination is thisMMS's child then searching visited info from redis server
+			String dstMrn = parser.getDstMRN();
+			boolean awayChild = false; //req가 service의 relaying인지 확인
+			boolean otherMmsChild=false;
+			boolean isService = false;
+			
+			//source MRN이 visited 목록에 있으면 away상태의 this MMS's child이다. 
+			if(homeMmsService.getVisited(srcMrn)) {//visited:다른 MMS에 나가있는 MRN인가?
+				awayChild = true;
+			}
+			//destination MRN이 visited 목록에 있으면 away상태의 this MMS's child이다.
+			if(homeMmsService.getVisited(dstMrn)) {
+				awayChild = true;
+			}
+			//else
+			if(!myChildSc) {//this MMS's child도 아니면 home manager에서 뒤져야 하나...
+				/**
+				 * Temporary code : implements it in HomeMmsService
+				 */
+				HomeManager homeManager = new HomeManager(sessionId);
+				List<HashMap<String, String>> scList = homeManager.getScMrnList();
+				for (int i = 0; i < scList.size(); i++) {
+					Map<String, String> scMap = scList.get(i);
+
+					if (srcMrn.equals(scMap.get("scMrn"))) {
+						otherMmsChild = true;
+						logger.debug("req dstMRN:[{}] is MMS MRN [{}]'s client...", scMap.get("scMrn"), scMap.get("homeMrn"));
+						break;
+					}
+				}
+				if(
+						///!awayChild && 
+						!otherMmsChild) {//나가있는 thisMMS' SC도 아니고, 다른 MMS의 SC도 아니면, 이것은 service provider이다 라고 간주 20190903현재 기준
+					isService = true;
+					///parser.setIsRelayingToVisitedSc(true);//visited MMS에 sp의 message를 away SC에 전송하도록 한다.
+					///setIsRelayingToVisitedSc 필요없다
+					//parser.setIsService(isService);
+					//단순히 polling된 sc에 sp가 보내는것도 writing for visited sc로 처리된다.
+				}
+				if(isService && awayChild) {
+					parser.setIsRelayingToVisitedSc(true);
+					///parser.setIsWritingForVisitedSc(isService);
+					parser.getVisitMmsHostName();
+					parser.getVisitMmsPort();
+					
+					///homeMmsService.findVisitedMmsInfo(dstMrn);
+					//TODO refactoring it
+					String visitedMmsIp = "";
+					String visitedMmsPort = "";
+					String visitedMmsMrn=null;
+					
+					Map<String, String> visitedMmsInfoMap = new HashMap<String, String>();
+					visitedMmsInfoMap = homeMmsService.findVisitedMmsInfo(dstMrn);
+					
+					
+					visitedMmsIp = visitedMmsInfoMap.get("ip");
+					if(visitedMmsInfoMap.get("port")!=null) {
+						visitedMmsPort = visitedMmsInfoMap.get("port");
+					}
+					visitedMmsMrn = visitedMmsInfoMap.get("visitMms");
+					
+					parser.setVisitMmsHostName(visitedMmsIp);
+					parser.setVisitMmsPort(visitedMmsPort);
+				}
+			}
+			
+			String thisMmsMrn = MMSConfiguration.getMmsMrn();
+			/**
+			 * MMS-x의 SC가 this MMS에 visit일 때
+			 * this redis에는 "visitSc"의 MRN과  VSC의 home MMS의 MRN이 저장되어 있어야 한다 (ip, port)
+			 * VSC의 home MMS에 이 event(visited SC가 registration)를 알린다. /register-visiting
+			 * VSC의 MMS는 해당 SC가 다른 MMS에 visited 됐다는 정보를 redis에 등록한다.
+			 *      ex)"VL_urn:mrn:smart-navi:s:krsh003", homeMms:urn:mrn:smart-navi:device:mmsX
+			 */
+			if(null != visitSc) {//visited의 요청이다
+			
+				String homeMmsMrn = parser.getHomeMms();///home MMS정보는 header에 없다; SC는 homeMmsMrn정보가 없다
+				
+				/**
+				 * findHomeMmsMrn()
+				 */
+				
+				Map<String, String> homeMmsInfoMap = new HashMap<String, String>();
+				
+				//TODO home manager가 완성되면 이 line을 적용한다
+				homeMmsInfoMap = homeMmsService.findHomeMmsInfo(visitSc, sessionId); ///visitSc의 MRN
+				
+				if(homeMmsInfoMap.size()>0) {
+					String homeMmsIp = "";
+					int homeMmsPort = 0;
+					
+					homeMmsIp = homeMmsInfoMap.get("ip");
+					if(homeMmsInfoMap.get("port")!=null) {
+						homeMmsPort = Integer.parseInt(homeMmsInfoMap.get("port").toString());
+					}
+					homeMmsMrn = homeMmsInfoMap.get("homeMrn");
+					
+					homeMmsService.insertVisited(visitSc, homeMmsMrn, homeMmsIp, homeMmsPort);
+					
+					logger.debug("visited MmsMrn==={}, home mms MRN {}", thisMmsMrn, homeMmsMrn);
+					
+					//send to (visited SC) home mms
+					/**
+					 * visitSc, homeMmsIp, homeMmsPort, parser.getDstMRN(), visitedMms, thisMMSport
+					 */
+					HomeMmsHttpSend homeMmsHttpSend = new HomeMmsHttpSend(visitSc, homeMmsIp, Integer.toString(homeMmsPort), parser.getDstMRN(), MMSConfiguration.getMmsMrn(), Integer.toString(MMSConfiguration.getHttpPort()), "/register-visiting", "");
+					homeMmsHttpSend.sendToVisitedMmsInfo();
+					relayingHandler = new MessageRelayingHandler(bean);
+				}else {
+					logger.error("not found Home MMS info of visited SC");
+				}
+			}
+			/**
+			 * visited info가 없으면 this MMS의 child SC이다.
+			 * redis에 this MMS의 child SC 정보가 등록되어 있는가?
+			 * homeManager DB(maria/mysql) access를 가급적 피하려면 redis에서 먼저 등록여부 확인하고 homeManager.selectMyScInfo한 다음에 redis에 regist 한다
+			 */
+			else if(!parser.isRegisterVisit() && !parser.isRequestRemoveMrn() && !isService){//단순 long-polling이냐
+				if (!parser.isGeocastingMsg()) {
+					boolean myScInRedis = false;
+					myScInRedis = homeMmsService.findClientInfo(srcMrn);
+
+					boolean myScInHomeManager = false;
+					boolean awayVisited = false;
+
+					/**
+					 * Temporary code : implements it in HomeMmsService
+					 */
+					HomeManager homeManager = new HomeManager(sessionId);
+					List<HashMap<String, String>> scList = homeManager.getScMrnList();
+					for (int i = 0; i < scList.size(); i++) {
+						Map<String, String> scMap = scList.get(i);
+
+						if (thisMmsMrn.equals(scMap.get("homeMrn")) && srcMrn.equals(scMap.get("scMrn"))) {
+							myScInHomeManager = true;
+							logger.debug("req scMRN:[{}], this MMS MRN [{}]", scMap.get("scMrn"), scMap.get("homeMrn"));
+							break;
+						}
+					}
+
+					/// myScInHomeManager = homeMmsService.findMyScInfo(srcMrn); //TODO implements it in HomeMmsService
+
+					awayVisited = homeMmsService.getVisited(srcMrn);
+
+					if (!myScInRedis) {
+						//service provider도 안한다
+						///homeMmsService.registMyScInfo(srcMrn); /// polling일 때는 regist할 필요 없다
+					}
+					/**
+					 * visited MMS에 등록했던 register-visiting 정보를 삭제하도록 http요청한다
+					 */
+					//else {
+					if (myScInHomeManager && awayVisited) {
+							//TODO refactoring it
+							String visitedMmsIp = "";
+							int visitedMmsPort = 0;
+							String visitedMmsMrn=null;
+							
+							Map<String, String> visitedMmsInfoMap = new HashMap<String, String>();
+							visitedMmsInfoMap = homeMmsService.findVisitedMmsInfo(srcMrn);
+							
+							
+							visitedMmsIp = visitedMmsInfoMap.get("ip");
+							if(visitedMmsInfoMap.get("port")!=null) {
+								visitedMmsPort = Integer.parseInt(visitedMmsInfoMap.get("port").toString());
+							}
+							visitedMmsMrn = visitedMmsInfoMap.get("visitMms");
+							
+							/**
+							 * String srcMrn, String targetMmsIp, String targetMmsPort, String dstMrn, String visitMmsMrn, String httpPort, String uri
+							 */
+							HomeMmsHttpSend homeMmsHttpSend =
+									new HomeMmsHttpSend(srcMrn, visitedMmsIp,
+											Integer.toString(visitedMmsPort),
+											parser.getDstMRN(),
+											visitedMmsMrn, Integer.toString(MMSConfiguration.getHttpPort()), "/remove-mrn", "");
+							homeMmsHttpSend.sendToVisitedMmsInfo();
+							//refactoring it:end
+							
+							long result = homeMmsService.removeAway(srcMrn);
+							logger.debug("away SC MRN {}row deleted", result);
+						}
+					//}//end of else
+				}//end of ; 단순 long-polling이냐
+
+				relayingHandler = new MessageRelayingHandler(bean);
+				// System.out.println("Successfully processed");
+			}
+			else if(parser.isRegisterVisit()){
+				
+				//이미 visited 정보가 있으면 해당 mms에 remove-mrn 요청
+				if(homeMmsService.getVisited(srcMrn)) {
+					//TODO refactoring it
+					String visitedMmsIp = "";
+					int visitedMmsPort = 0;
+					String visitedMmsMrn=null;
+					
+					Map<String, String> visitedMmsInfoMap = new HashMap<String, String>();
+					visitedMmsInfoMap = homeMmsService.findVisitedMmsInfo(srcMrn);
+					
+					
+					visitedMmsIp = visitedMmsInfoMap.get("ip");
+					if(visitedMmsInfoMap.get("port")!=null) {
+						visitedMmsPort = Integer.parseInt(visitedMmsInfoMap.get("port").toString());
+					}
+					visitedMmsMrn = visitedMmsInfoMap.get("visitMms");
+					
+					/**
+					 * String srcMrn, String targetMmsIp, String targetMmsPort, String dstMrn, String visitMmsMrn, String httpPort, String uri
+					 */
+					HomeMmsHttpSend homeMmsHttpSend =
+							new HomeMmsHttpSend(srcMrn, visitedMmsIp,
+									Integer.toString(visitedMmsPort),
+									parser.getDstMRN(),
+									visitedMmsMrn, Integer.toString(MMSConfiguration.getHttpPort()), "/remove-mrn", "");
+					homeMmsHttpSend.sendToVisitedMmsInfo();
+					//refactoring it:end
+				};
+				
+				String awayScMrn = parser.getSrcMRN();
+				String visitMrn = "";
+				
+				visitMrn = parser.getVisitMmsMrn();
+				String visitedMmsIp = parser.getSrcIP();
+				
+				int visitedMmsPort= Integer.parseInt(parser.getVisitMmsPort());
+				
+				homeMmsService.insertAway(awayScMrn, visitMrn, visitedMmsIp, visitedMmsPort);
+				relayingHandler = new MessageRelayingHandler(bean);
+			}
+			else if(parser.isRequestRemoveMrn()) {
+				long removeResult = homeMmsService.removeVisitedScMrn(srcMrn);
+				logger.debug("visited SC MRN {}row deleted", removeResult);
+				relayingHandler = new MessageRelayingHandler(bean);
+			}else if(isService) {
+				logger.debug("source MRN {} is Service Provider, it's relaying to {}", srcMrn, dstMrn);
+				relayingHandler = new MessageRelayingHandler(bean);
+			}
+			/**
+    		 * 여기서부터 visited SC 처리하는 source code
+    		 * 완성된 후 VisiteManager.java로 이동
+    		 */
+			///여기에 원본의 relayingHandler = new MessageRelayingHandler(bean);
+			///가 있어야 한다.
 		}
 		/*catch (Exception e) {
 			e.printStackTrace();
@@ -424,7 +690,21 @@ public class MRH_MessageInputChannel extends SimpleChannelInboundHandler<FullHtt
     	if (clientType != null) {
     		SessionManager.removeSessionInfo(sessionId);    		
       }
+    	
+    	Object obj  = relayingHandler.getConnectionThread();
+    	
+    	System.out.println("///relayingHandler.getConnectionThread ==="+obj);
+    	
+    	LinkedList<ChannelTerminateListener> listeners = ctx.channel().attr(TERMINATOR).get();
+    	int ls = listeners.size();
+        for(int i=0; i< ls; i++) {
+        	ChannelTerminateListener listener = listeners.get(i);
 
+        	System.out.println("///==="+listener.getClass());
+        	System.out.println("///==="+listener.toString());
+        	listener.terminate(ctx);
+        }
+        
     	if (!ctx.isRemoved()){
     		  ctx.close();
       }

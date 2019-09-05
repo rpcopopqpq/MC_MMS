@@ -175,6 +175,10 @@ public class MMSConfiguration {
 	private static String RABBIT_MQ_PASSWD = null;
 	private static int RABBIT_MQ_CONN_POOL = 0;
 	
+	private static String REDIS_HOST = null;
+	
+	private static int REDIS_PORT = 0;
+	
 	private static String KEYSTORE = null;
 	
 	private static Map<String, String> MMS_CONFIGURATION = null;
@@ -656,6 +660,17 @@ public class MMSConfiguration {
 				}		
 				
 				
+			if(REDIS_HOST == null ) {
+				if (jobj.get("REDIS_HOST") != null){
+					REDIS_HOST = (String) jobj.get("REDIS_HOST");
+				}
+			}
+			
+			if(REDIS_PORT == 0 ) {
+				if (jobj.get("REDIS_PORT") != null){
+					REDIS_PORT = Integer.parseInt((String) jobj.get("REDIS_PORT"));
+				}
+			}
 				
 				
 				fr.close();
@@ -780,6 +795,8 @@ public class MMSConfiguration {
 			alertAndSetMmsConf("MAX_BRIEF_LOG_LIST_SIZE",MAX_BRIEF_LOG_LIST_SIZE);
 			alertAndSetMmsConf("MAX_CONTENT_SIZE",MAX_CONTENT_SIZE+"bytes");
 			alertAndSetMmsConf("WAITING_MESSAGE_TIMEOUT",WAITING_MESSAGE_TIMEOUT+"ms");
+			alertAndSetMmsConf("REDIS_PORT",( Integer.valueOf(REDIS_PORT).toString()));
+			alertAndSetMmsConf("REDIS_HOST",REDIS_HOST);
 			if (HTTPS_ENABLED[1]) {
 				alertAndSetMmsConf("KEYSTORE",KEYSTORE.substring(0, 50)+"......");
 			}
@@ -957,5 +974,20 @@ public class MMSConfiguration {
 			}
 		}
 		return 0;
+	}
+	public static String getREDIS_HOST() {
+		return REDIS_HOST;
+	}
+
+	public static void setREDIS_HOST(String rEDIS_HOST) {
+		REDIS_HOST = rEDIS_HOST;
+	}
+
+	public static int getREDIS_PORT() {
+		return REDIS_PORT;
+	}
+
+	public static void setREDIS_PORT(int rEDIS_PORT) {
+		REDIS_PORT = rEDIS_PORT;
 	}
 }

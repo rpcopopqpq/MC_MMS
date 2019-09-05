@@ -50,15 +50,15 @@ public class MRNInformationQuerier {
 		buf.append("{\""+castType+"\":" +
 				"{\"srcMRN\":\""+srcMRN+"\","+
 				"\"dstMRN\":\""+dstMRN+"\","+
-				"\"lat\":[\"");
-		longituteBuf.append("\"long\":[\"");
+				"\"lat\":[");
+		longituteBuf.append("\"long\":[");
 		int i = 0 ;
 		for (i = 0 ; i < geoLat.length-1 ; i++) {
-			buf.append(geoLat[i]+"\",\"");
-			longituteBuf.append(geoLong[i]+"\",\"");
+			buf.append(geoLat[i]+",");
+			longituteBuf.append(geoLong[i]+",");
 		}
-		buf.append(geoLat[i]+"\"],");
-		longituteBuf.append(geoLong[i]+"\"]}}"); 
+		buf.append(geoLat[i]+"],");
+		longituteBuf.append(geoLong[i]+"]}}"); 
 		//System.out.println(buf.toString() + longituteBuf.toString());
 		return buf.toString() + longituteBuf.toString();
 	}

@@ -1,0 +1,27 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.7.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+	id 'java'
+}
+
+group = 'kr.co.nexsys'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.apache.camel:camel-spring-boot-starter:2.24.0'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// https://mvnrepository.com/artifact/org.apache.camel/camel-test-spring
+testCompile group: 'org.apache.camel', name: 'camel-test-spring', version: '2.24.1'
+// https://mvnrepository.com/artifact/org.apache.camel/camel-http4
+	compile group: 'org.apache.camel', name: 'camel-http4', version: '2.24.1'
+	//compile group: 'org.apache.camel', name: 'camel-jsonpath', version: '2.24.1'
+	//compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.9.3'
+	//compile group: 'org.apache.camel', name: 'json-simple-ordered', version: '2.24.1'
+	compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
+	
+}

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import kr.ac.kaist.message_relaying.MRH_MessageInputChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +21,8 @@ public class DistributeMMS {
 
 	private static final Logger logger = LoggerFactory.getLogger(DistributeMMS.class);
 	
-	public void visitMMSExecute(MRH_MessageOutputChannel outputChannel, FullHttpRequest req, String protocol, HttpMethod httpMethod, String srcMRN, String dstMRN, MessageTypeDecider.msgType type, MessageCastingHandler mch, ArrayList<HashMap<String, String>> mrnIpMapList) {
-		HttpHeaders httpHeaders = req.headers();
+	public void visitMMSExecute(MRH_MessageInputChannel.ChannelBean bean, MessageCastingHandler mch ,ArrayList<HashMap<String, String>> mrnIpMapList) {
+		HttpHeaders httpHeaders = bean.getReq().headers();
 		
 		boolean mainMMS = true;
 		
@@ -38,7 +39,7 @@ public class DistributeMMS {
 				
 				if(MMSConfiguration.getMmsMrn() != null && !MMSConfiguration.getMmsMrn().equals(mrnIpMapList.get(i).get("mrn"))) {
 					//mch.asynchronizedUnicastDmms(outputChannel, req, mrnIpMapList.get(i).get("ip"), Integer.parseInt(mrnIpMapList.get(i).get("port").toString()), protocol, httpMethod, mrnIpMapList.get(i).get("mrn"), dstMRN); // Execute this relaying process
-					///mch.asynchronizedUnicastDmms(outputChannel, req, mrnIpMapList.get(i).get("ip"), Integer.parseInt(mrnIpMapList.get(i).get("port").toString()), protocol, httpMethod, mrnIpMapList.get(i).get("mrn"), dstMRN); // Execute this relaying process
+					 mch.asynchronizedUnicastDmms(bean, mrnIpMapList.get(i).get("mrn"));
 				}
 			}
 			

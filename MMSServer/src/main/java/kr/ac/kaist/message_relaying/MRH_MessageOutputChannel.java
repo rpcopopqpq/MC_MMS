@@ -304,9 +304,16 @@ public class MRH_MessageOutputChannel{
 
 		return connectToServer(con, url, bean);
 	}
+	public HttpURLConnection requestMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
+		String url = "http://" + bean.getParser().getDstIP() + ":" + bean.getParser().getDstPort() + bean.getReq().uri();
+		URL obj = new URL(url);
+		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+		mmsLog.info(logger, this.sessionId, "Try connecting to url="+url);
+
+		return connectToServer(con, url, bean, mmsMRN);
+	}
 
 	public HttpURLConnection requestSecureMessage(MRH_MessageInputChannel.ChannelBean bean) throws IOException {
-		
 
 	  	hv = getHV();
 	  	
@@ -321,6 +328,23 @@ public class MRH_MessageOutputChannel{
 		return connectToServer(con, url, bean);
 
 	}
+
+	public HttpURLConnection requestSecureMessage(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
+
+		hv = getHV();
+
+		String url = "https://" + bean.getParser().getDstIP() + ":" + bean.getParser().getDstPort() + bean.getReq().uri();
+
+		URL obj = new URL(url);
+		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+		mmsLog.info(logger, this.sessionId, "Try connecting to url="+url);
+
+		con.setHostnameVerifier(hv);
+
+		return connectToServer(con, url, bean, mmsMRN);
+
+	}
+
 	
 	public HttpURLConnection requestSecureMessage(String ipAddress, int port, HttpMethod httpMethod, String uri, String username, String password) throws IOException {
 
@@ -407,48 +431,40 @@ public class MRH_MessageOutputChannel{
 
 		return con;
 	}
-	
-		public HttpURLConnection requestMessageDmms(FullHttpRequest req, String IPAddress, int port, HttpMethod httpMethod, String srcMRN, String dstMRN) throws IOException {  
-		
-		String url = "http://" + IPAddress + ":" + port + req.uri();
-		URL obj = new URL(url);
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		logger.info("SessionID="+this.sessionId+" Try connecting to url="+url);
-		/*
-		if(MMSConfiguration.WEB_LOG_PROVIDING()) {
-			String log = "SessionID="+this.sessionId+" Try connecting to url="+url;
-			mmsLog.addBriefLogForStatus(log);
-			mmsLogForDebug.addLog(this.sessionId, log);
-		}
-		*/
-		HttpHeaders httpHeaders = req.headers();
-		
-		
+
+	HttpURLConnection connectToServer (HttpURLConnection con, String url, MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws  IOException{
+
+		// set connection configuration
+		con.setConnectTimeout(MMSConfiguration.getWaitingMessageTimeout());
+		con.setReadTimeout(10000);
+
+
 //		Setting HTTP method
-		if (httpMethod == httpMethod.POST) {
+		if (bean.getParser().getHttpMethod() == HttpMethod.POST) {
 			con.setRequestMethod("POST");
-		} else if (httpMethod == httpMethod.GET) {
+		} else if (bean.getParser().getHttpMethod() == HttpMethod.GET) {
 			con.setRequestMethod("GET");
 		}
-		
-//		Setting remaining headers
+
+		HttpHeaders httpHeaders = bean.getReq().headers();
+
+		//		Setting remaining headers
 		for (Iterator<Map.Entry<String, String>> htr = httpHeaders.iteratorAsString(); htr.hasNext();) {
 			Map.Entry<String, String> htrValue = htr.next();
 
-			// 20190826 nexsys start
 			if(htrValue.getKey().equals("srcMRN")) {
-				con.setRequestProperty("D-MMSMrn", srcMRN);
+				con.setRequestProperty("D-MMSMrn", mmsMRN);
 			}
+			//if (!htrValue.getKey().equals("srcMRN") && !htrValue.getKey().equals("dstMRN")) {
 			con.setRequestProperty(htrValue.getKey(), htrValue.getValue());
-			// 20190826 nexsys end
+			//}
 		}
 
-		String urlParameters = req.content().toString(Charset.forName("UTF-8")).trim();
-		
+		String urlParameters = bean.getReq().content().toString(Charset.forName("UTF-8")).trim();
 		con.setRequestProperty("Content-Length", urlParameters.length() + "");
-		
-		
-		if (httpMethod == httpMethod.POST) {
+
+
+		if (bean.getParser().getHttpMethod() == HttpMethod.POST) {
 			// Send post request
 			con.setDoOutput(true);
 			BufferedWriter wr = new BufferedWriter(
@@ -456,14 +472,15 @@ public class MRH_MessageOutputChannel{
 			wr.write(urlParameters);
 			wr.flush();
 			wr.close();
-		} 
-		
-		// get request doesn't have http body
-		logger.trace("SessionID="+this.sessionId+" "+(httpMethod==httpMethod.POST?"POST":"GET")+" request to URL=" + url + "\n"
-				+ (httpMethod==httpMethod.POST?"POST":"GET")+" parameters=" + urlParameters+"\n");
+		}
+		if (logger.isTraceEnabled()) {
+			mmsLog.trace(logger, this.sessionId, (bean.getParser().getHttpMethod()==HttpMethod.POST?"POST":"GET")+" request to URL=" + url + "\n"
+					+ (bean.getParser().getHttpMethod()==HttpMethod.POST?"POST":"GET")+" parameters=" + urlParameters+"\n");
+		}
+
 		return con;
 	}
-	
+
 	public byte[] getResponseMessage(HttpURLConnection con) throws IOException {
 		// get request doesn't have http body
 		responseCode = con.getResponseCode();
@@ -504,30 +521,36 @@ public class MRH_MessageOutputChannel{
 		HttpURLConnection con = requestMessage(bean);
 		return new ConnectionThread(con, bean);
 	}
-	
+
+	/*
 	public ConnectionThread asynchronizeSendMessageDmms(MRH_MessageInputChannel.ChannelBean bean) throws IOException {  
 		HttpURLConnection con = requestMessage(bean);
 		return new ConnectionThread(con, bean);
-	}
-	/* neonex???
-	public ConnectionThread asynchronizeSendMessageDmms(FullHttpRequest req, String IPAddress, int port, HttpMethod httpMethod, String srcMRN, String dstMRN) throws IOException {  
-		HttpURLConnection con = requestMessageDmms(req, IPAddress, port, httpMethod, srcMRN, dstMRN);
-		return new ConnectionThread(con);
 	}*/
+
+	public ConnectionThread asynchronizeSendMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
+		HttpURLConnection con = requestMessageDmms(bean,mmsMRN);
+		return new ConnectionThread(con,bean);
+	}
 	
 	// To do secure relaying
 	public byte[] secureSendMessage(MRH_MessageInputChannel.ChannelBean bean) throws NullPointerException, IOException { // 
 		HttpURLConnection con = requestSecureMessage(bean);
 		return getResponseMessage(con);
 	}
-	
+
 	//  To use restful API
 	public byte[] secureSendMessage(String ipAddress, int port, HttpMethod httpMethod, String uri, String username, String password)  throws IOException {
 		return getResponseMessage(requestSecureMessage(ipAddress, port, httpMethod, uri, username, password));
 	}
-	
-	public ConnectionThread asynchronizeSendSecureMessage(MRH_MessageInputChannel.ChannelBean bean) throws NullPointerException, IOException { // 
+
+	public ConnectionThread asynchronizeSendSecureMessage(MRH_MessageInputChannel.ChannelBean bean) throws NullPointerException, IOException { //
 		HttpURLConnection con = requestSecureMessage(bean);
+		return new ConnectionThread(con, bean);
+	}
+	
+	public ConnectionThread asynchronizeSendSecureMessage(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws NullPointerException, IOException { //
+		HttpURLConnection con = requestSecureMessage(bean,mmsMRN);
 		return new ConnectionThread(con, bean);
 	}
 	

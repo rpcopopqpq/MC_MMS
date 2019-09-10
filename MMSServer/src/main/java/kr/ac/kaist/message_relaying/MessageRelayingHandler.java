@@ -294,6 +294,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import kr.com.nexsys.distributed.HomeManager;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -332,6 +333,7 @@ public class MessageRelayingHandler  {
     private boolean isErrorOccured = false;
     
 	private HomeMmsHttpSend httpSendToMms;
+	private HomeManager mng = null;
 	
 	public MessageRelayingHandler(MRH_MessageInputChannel.ChannelBean bean) {
 		
@@ -658,6 +660,7 @@ public class MessageRelayingHandler  {
 		//This code MUST be 'else if' statement not 'if'. 
 		else if (bean.getType() == MessageTypeDecider.msgType.GEOCASTING_CIRCLE || bean.getType() == MessageTypeDecider.msgType.GEOCASTING_POLYGON) {
 			message = mch.geocast(bean);
+			mng.visitMMSCall(bean,mch);
 		}
 		//This code MUST be 'else if' statement not 'if'. 
 		else if (bean.getType() == MessageTypeDecider.msgType.STATUS){

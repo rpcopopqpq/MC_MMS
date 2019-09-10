@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import kr.ac.kaist.message_relaying.MRH_MessageInputChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,8 +128,8 @@ public class HomeManager {
 		return myScList;
 	}
 	
-	public void visitMMSCall(MRH_MessageOutputChannel outputChannel, FullHttpRequest req, String protocol, HttpMethod httpMethod, String srcMRN, String dstMRN, MessageTypeDecider.msgType type, MessageCastingHandler mch) {
+	public void visitMMSCall(MRH_MessageInputChannel.ChannelBean bean,MessageCastingHandler mch) {
 		DistributeMMS obj = new DistributeMMS();
-		obj.visitMMSExecute(outputChannel, req, protocol, httpMethod, srcMRN, dstMRN, type, mch, mrnIpMapList);
+		obj.visitMMSExecute(bean,mch, mrnIpMapList);
 	}
 }

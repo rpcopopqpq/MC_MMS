@@ -114,7 +114,7 @@ public class MNSDummy {
 		//       (Geo-location added version)   IP_Address:PortNumber:Model:Geo-location
 		//
 		//
-		
+
 		MRNtoIP.put("urn:mrn:imo:imo-no:1000001","223.39.131.117:0:1");
 		MRNtoIP.put("urn:mrn:imo:imo-no:1000001-SCSession","118.220.143.130:0:1");
 		MRNtoIP.put("urn:mrn:imo:imo-no:1000001-kaist","172.25.0.11:0:1");
@@ -273,7 +273,13 @@ public class MNSDummy {
 		MRNtoIP.put("urn:mrn:kr:vessel:mmsi:440956000","1.1.1.1:0:1");
 		MRNtoIP.put("urn:mrn:kr:vessel:mmsi:441178000","1.1.1.1:0:1");
 		MRNtoIP.put("urn:mrn:kr:vessel:mmsi:000000001","1.1.1.1:0:1");
-		
+
+		//Geocasting Test
+		MRNtoIP.put("urn:mrn:imo:imo-no:1000111","127.0.0.1:0:1");
+		MRNtoIP.put("urn:mrn:imo:imo-no:1000112","127.0.0.1:0:1");
+		MRNtoIP.put("urn:mrn:imo:imo-no:1000113","127.0.0.1:0:1");
+
+
 		//-----------------------------------------------------
 
 		while(true)

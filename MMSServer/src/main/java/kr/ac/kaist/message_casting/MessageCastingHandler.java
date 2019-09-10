@@ -226,7 +226,34 @@ public class MessageCastingHandler {
 		}
 		return thread;
 	}
-	
+
+	public ConnectionThread asynchronizedUnicastDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) {
+		ConnectionThread thread = null;
+		try {
+			if (bean.getProtocol().equals("http")) {
+				thread = bean.getOutputChannel().asynchronizeSendMessageDmms(bean, mmsMRN);
+				thread.start();
+
+				logger.info("SessionID="+this.sessionId+" Protocol=HTTP.");
+			}
+			else if (bean.getProtocol().equals("https")) {
+				thread = bean.getOutputChannel().asynchronizeSendSecureMessage(bean, mmsMRN);
+				thread.start();
+				logger.info("SessionID="+this.sessionId+" Protocol=HTTPS.");
+			}
+			else {
+				logger.info("SessionID="+this.sessionId+" No protocol.");
+			}
+
+		}
+		catch (IOException e) {
+			logger.warn("SessionID="+this.sessionId+" "+e.getClass().getName()+" "+e.getStackTrace()[0]+".");
+			for (int i = 1 ; i < e.getStackTrace().length && i < 4 ; i++) {
+				logger.warn("SessionID="+this.sessionId+" "+e.getStackTrace()[i]+".");
+			}
+		}
+		return thread;
+	}
 	
 	public byte[] geocast (MRH_MessageInputChannel.ChannelBean bean) {
 		

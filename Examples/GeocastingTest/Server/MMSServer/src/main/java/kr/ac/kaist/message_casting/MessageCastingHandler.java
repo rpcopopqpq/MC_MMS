@@ -275,7 +275,7 @@ public class MessageCastingHandler {
 					
 					String dstMRNInGeoDstInfo = (String) obj.get("dstMRN");
 					String netTypeInGeoDstInfo = (String) obj.get("netType");
-					return srh.putSCMessage(bean);
+					return srh.putSCMessage(bean,dstMRNInGeoDstInfo);
 		    		
 				}
 				else if (connType.equals("push")) {

@@ -99,10 +99,14 @@ public class MessageQueueManager {
 		MessageQueueDequeuer mqd = new MessageQueueDequeuer(this.sessionId);
 		mqd.dequeueMessage(bean);
 	}
-	
 	public byte[] enqueueMessage (MRH_MessageInputChannel.ChannelBean bean) {
 		MessageQueueEnqueuer mqe = new MessageQueueEnqueuer(this.sessionId);
 		return mqe.enqueueMessage(bean);
+	}
+	//gecoasting
+	public byte[] enqueueMessage (MRH_MessageInputChannel.ChannelBean bean, String dstMRNInGeoDstInfo) {
+		MessageQueueEnqueuer mqe = new MessageQueueEnqueuer(this.sessionId);
+		return mqe.enqueueMessage(bean,dstMRNInGeoDstInfo);
 	}
 	
 	public long getTotalQueueNumber ()  {

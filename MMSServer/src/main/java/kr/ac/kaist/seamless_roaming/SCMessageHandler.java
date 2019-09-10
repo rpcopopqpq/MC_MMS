@@ -40,9 +40,14 @@ class SCMessageHandler {
 	SCMessageHandler (String sessionId) {
 		this.sessionId = sessionId;
 	}
-	
+
 	byte[] enqueueSCMessage(MRH_MessageInputChannel.ChannelBean bean){
 		MessageQueueManager mqm = new MessageQueueManager(this.sessionId);
 		return mqm.enqueueMessage(bean);
+	}
+	//geocasting
+	byte[] enqueueSCMessage(MRH_MessageInputChannel.ChannelBean bean, String dstMRNInGeoDstInfo){
+		MessageQueueManager mqm = new MessageQueueManager(this.sessionId);
+		return mqm.enqueueMessage(bean,dstMRNInGeoDstInfo);
 	}
 }

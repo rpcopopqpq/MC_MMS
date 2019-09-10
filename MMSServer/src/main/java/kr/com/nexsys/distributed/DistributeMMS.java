@@ -25,7 +25,8 @@ public class DistributeMMS {
 		HttpHeaders httpHeaders = bean.getReq().headers();
 		
 		boolean mainMMS = true;
-		
+
+
 		for (Iterator<Map.Entry<String, String>> htr = httpHeaders.iteratorAsString(); htr.hasNext();) {
 			Map.Entry<String, String> htrValue = htr.next();
 			if(htrValue.getKey().equals("D-MMSMrn") && htrValue.getValue().equals(MMSConfiguration.getMmsMrn())) {
@@ -39,7 +40,7 @@ public class DistributeMMS {
 				
 				if(MMSConfiguration.getMmsMrn() != null && !MMSConfiguration.getMmsMrn().equals(mrnIpMapList.get(i).get("mrn"))) {
 					//mch.asynchronizedUnicastDmms(outputChannel, req, mrnIpMapList.get(i).get("ip"), Integer.parseInt(mrnIpMapList.get(i).get("port").toString()), protocol, httpMethod, mrnIpMapList.get(i).get("mrn"), dstMRN); // Execute this relaying process
-					 mch.asynchronizedUnicastDmms(bean, mrnIpMapList.get(i).get("mrn"));
+					 mch.asynchronizedUnicastDmms(bean,mrnIpMapList.get(i).get("ip"), Integer.parseInt(mrnIpMapList.get(i).get("port").toString()), mrnIpMapList.get(i).get("mrn"));
 				}
 			}
 			

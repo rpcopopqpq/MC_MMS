@@ -304,8 +304,8 @@ public class MRH_MessageOutputChannel{
 
 		return connectToServer(con, url, bean);
 	}
-	public HttpURLConnection requestMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
-		String url = "http://" + bean.getParser().getDstIP() + ":" + bean.getParser().getDstPort() + bean.getReq().uri();
+	public HttpURLConnection requestMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String IPAddress, int port, String mmsMRN) throws IOException {
+		String url = "http://" + IPAddress + ":" + port + bean.getReq().uri();
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		mmsLog.info(logger, this.sessionId, "Try connecting to url="+url);
@@ -329,11 +329,11 @@ public class MRH_MessageOutputChannel{
 
 	}
 
-	public HttpURLConnection requestSecureMessage(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
+	public HttpURLConnection requestSecureMessage(MRH_MessageInputChannel.ChannelBean bean,String IPAddress, int port, String mmsMRN) throws IOException {
 
 		hv = getHV();
 
-		String url = "https://" + bean.getParser().getDstIP() + ":" + bean.getParser().getDstPort() + bean.getReq().uri();
+		String url = "https://" + IPAddress + ":" + port + bean.getReq().uri();
 
 		URL obj = new URL(url);
 		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
@@ -528,8 +528,8 @@ public class MRH_MessageOutputChannel{
 		return new ConnectionThread(con, bean);
 	}*/
 
-	public ConnectionThread asynchronizeSendMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws IOException {
-		HttpURLConnection con = requestMessageDmms(bean,mmsMRN);
+	public ConnectionThread asynchronizeSendMessageDmms(MRH_MessageInputChannel.ChannelBean bean, String IPAddress, int port, String mmsMRN) throws IOException {
+		HttpURLConnection con = requestMessageDmms(bean,IPAddress,port,mmsMRN);
 		return new ConnectionThread(con,bean);
 	}
 	
@@ -549,8 +549,8 @@ public class MRH_MessageOutputChannel{
 		return new ConnectionThread(con, bean);
 	}
 	
-	public ConnectionThread asynchronizeSendSecureMessage(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) throws NullPointerException, IOException { //
-		HttpURLConnection con = requestSecureMessage(bean,mmsMRN);
+	public ConnectionThread asynchronizeSendSecureMessage(MRH_MessageInputChannel.ChannelBean bean, String IPAddress, int port, String mmsMRN) throws NullPointerException, IOException { //
+		HttpURLConnection con = requestSecureMessage(bean,IPAddress,port,mmsMRN);
 		return new ConnectionThread(con, bean);
 	}
 	

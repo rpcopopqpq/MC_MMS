@@ -298,6 +298,10 @@ public class SeamlessRoamingHandler {
 		return scmh.enqueueSCMessage(bean);
 	}
 
+	//geocasting
+	public byte[] putSCMessage(MRH_MessageInputChannel.ChannelBean bean, String dstMRNInGeoDstInfo) {
+		return scmh.enqueueSCMessage(bean,dstMRNInGeoDstInfo);
+	}
 	
 	public static long getDuplicateInfoSize() {
 		synchronized(duplicateInfo) {

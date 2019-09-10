@@ -397,12 +397,14 @@ public class MessageRelayingHandler  {
 		String content       = bean.getReq().content().toString(Charset.forName("UTF-8"));
 		logger.debug("[{}]==:contents:=={}\r{}", bean.getSessionId(), content);
 		this.httpSendToMms   = new HomeMmsHttpSend(srcMrn, targetMmsIp, targetMmsPort, dstMrn, visitMmsMrn, httpPort, uri, content);
+
 	}
 	
 	private void initializeModule() {
 		mch = new MessageCastingHandler(bean.getSessionId());
 		mmsLog = MMSLog.getInstance();
 		mmsLogForDebug = MMSLogForDebug.getInstance();
+		mng = new HomeManager(bean.getSessionId());
 	}
 	
 	private void initializeSubModule() {

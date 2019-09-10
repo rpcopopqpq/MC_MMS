@@ -63,7 +63,7 @@ public class ServiceProvider_GEO_Circle_8088 {
 		// Header field example ends.
 		
 		String dstMRN = "*";//"urn:mrn:smart-navi:device:mms1";
-		sender.sendPostMsg(dstMRN, "Hello Geocast Circle!!!");
+		sender.sendPostMsg(dstMRN, "Hello Geocast Circle!!!",6000);
 		
 		
 		/*server.setServerPort(port, "/forwarding", new MMSClientHandler.RequestCallback() {

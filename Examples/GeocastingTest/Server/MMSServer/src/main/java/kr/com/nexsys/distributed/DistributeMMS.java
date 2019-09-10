@@ -25,7 +25,8 @@ public class DistributeMMS {
 		HttpHeaders httpHeaders = bean.getReq().headers();
 		
 		boolean mainMMS = true;
-		
+
+
 		for (Iterator<Map.Entry<String, String>> htr = httpHeaders.iteratorAsString(); htr.hasNext();) {
 			Map.Entry<String, String> htrValue = htr.next();
 			if(htrValue.getKey().equals("D-MMSMrn") && htrValue.getValue().equals(MMSConfiguration.getMmsMrn())) {

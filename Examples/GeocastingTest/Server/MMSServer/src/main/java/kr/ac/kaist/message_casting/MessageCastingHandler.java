@@ -227,17 +227,17 @@ public class MessageCastingHandler {
 		return thread;
 	}
 
-	public ConnectionThread asynchronizedUnicastDmms(MRH_MessageInputChannel.ChannelBean bean, String mmsMRN) {
+	public ConnectionThread asynchronizedUnicastDmms(MRH_MessageInputChannel.ChannelBean bean, String IPAddress, int port, String mmsMRN) {
 		ConnectionThread thread = null;
 		try {
 			if (bean.getProtocol().equals("http")) {
-				thread = bean.getOutputChannel().asynchronizeSendMessageDmms(bean, mmsMRN);
+				thread = bean.getOutputChannel().asynchronizeSendMessageDmms(bean, IPAddress, port, mmsMRN);
 				thread.start();
 
 				logger.info("SessionID="+this.sessionId+" Protocol=HTTP.");
 			}
 			else if (bean.getProtocol().equals("https")) {
-				thread = bean.getOutputChannel().asynchronizeSendSecureMessage(bean, mmsMRN);
+				thread = bean.getOutputChannel().asynchronizeSendSecureMessage(bean, IPAddress, port, mmsMRN);
 				thread.start();
 				logger.info("SessionID="+this.sessionId+" Protocol=HTTPS.");
 			}

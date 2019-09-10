@@ -275,9 +275,11 @@ public class MNSDummy {
 		MRNtoIP.put("urn:mrn:kr:vessel:mmsi:000000001","1.1.1.1:0:1");
 
 		//Geocasting Test
-		MRNtoIP.put("urn:mrn:imo:imo-no:1000111","127.0.0.1:0:1");
-		MRNtoIP.put("urn:mrn:imo:imo-no:1000112","127.0.0.1:0:1");
-		MRNtoIP.put("urn:mrn:imo:imo-no:1000113","127.0.0.1:0:1");
+		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc1","127.0.0.1:0:1");
+		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc2","127.0.0.1:0:1");
+		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc3","127.0.0.1:0:1");
+
+		MRNtoIP.put("urn:mrn:smart-navi:device:geo-server","127.0.0.1:0");
 
 
 		//-----------------------------------------------------

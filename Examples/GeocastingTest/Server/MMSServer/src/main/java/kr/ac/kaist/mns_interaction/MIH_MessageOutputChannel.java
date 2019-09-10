@@ -100,6 +100,8 @@ class MIH_MessageOutputChannel {
 			return queue;
 		}
 	}
+
+	/*
 	String sendToMNS(
 			String req
 			///StringBuffer req
@@ -150,11 +152,11 @@ class MIH_MessageOutputChannel {
 		logger.debug("\r\rreply result================={}\r",queryReply);
 		return queryReply;
 	}
-
+*/
 	@Deprecated
 	String sendToMNS(
-			//String request
-			StringBuffer request
+			String request
+			//StringBuffer request
 			) {
 		
 		Socket MNSSocket = null;

@@ -17,11 +17,11 @@ Creation Date : 2018-07-27
 */
 /* -------------------------------------------------------- */
 
-public class ServiceProvider_GEO_Polygon_8088 {
+public class ServiceProvider_GEO_Polygon_8089 {
 	public static void main(String args[]) throws Exception{
 		String myMRN = "urn:mrn:smart-navi:device:geo-server";
 
-		MMSConfiguration.MMS_URL="127.0.0.1:8088";
+		MMSConfiguration.MMS_URL="127.0.0.1:8089";
 		MMSConfiguration.DEBUG=true;
 		
 		//MMSClientHandler server = new MMSClientHandler(myMRN);

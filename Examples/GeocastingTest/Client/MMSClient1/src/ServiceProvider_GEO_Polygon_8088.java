@@ -1,16 +1,14 @@
+import kr.ac.kaist.mms_client.MMSClientHandler;
+import kr.ac.kaist.mms_client.MMSConfiguration;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import kr.ac.kaist.mms_client.*;
-
 /* -------------------------------------------------------- */
-/** 
+
+/**
 File name : ServiceProvider_GEO_Polygon.java
 	Service Provider sends messages through geocasting.
 Author : Jaehee Ha (jaehee.ha@kaist.ac.kr)
@@ -19,10 +17,9 @@ Creation Date : 2018-07-27
 */
 /* -------------------------------------------------------- */
 
-public class ServiceProvider_GEO_Polygon {
+public class ServiceProvider_GEO_Polygon_8088 {
 	public static void main(String args[]) throws Exception{
 		String myMRN = "urn:mrn:smart-navi:device:geo-server";
-		int port = 8912;
 
 		MMSConfiguration.MMS_URL="127.0.0.1:8088";
 		MMSConfiguration.DEBUG=true;
@@ -62,7 +59,7 @@ public class ServiceProvider_GEO_Polygon {
 		// Header field example ends.
 		
 		String dstMRN = "*";
-		sender.sendPostMsg(dstMRN, "Hello Geocast");
+		sender.sendPostMsg(dstMRN, "Hello Geocast",5000);
 		/*server.setServerPort(port, "/forwarding", new MMSClientHandler.RequestCallback() {
 			//Request Callback from the request message
 			//it is called when client receives a message

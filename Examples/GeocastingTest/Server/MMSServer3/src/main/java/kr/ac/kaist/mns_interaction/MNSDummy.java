@@ -408,9 +408,37 @@ public class MNSDummy {
 						String dstMRN = geocastingQuery.get("dstMRN").toString();
 						String geoLat = geocastingQuery.get("lat").toString();
 						String geoLong = geocastingQuery.get("long").toString();
-						
-						System.out.println("Geocating polygon, srcMRN="+srcMRN+", dstMRN="+dstMRN+", geoLat="+geoLat+", geoLong="+geoLong);
-						dataToReply = "[{\"exception\":\"absent MRN\"}]";
+
+						Set<String> keys = MRNtoIP.keySet();
+						Iterator<String> keysIter = keys.iterator();
+						JSONArray objList = new JSONArray();
+
+						if (keysIter.hasNext()){
+							do {
+								String key = keysIter.next();
+								String value = MRNtoIP.get(key);
+								String[] parsedVal = value.split(":");
+
+								if(parsedVal.length == 4) { // Geo-information exists.
+									String[] curGeoMRN = parsedVal[3].split("-");
+
+									JSONObject item = new JSONObject();
+									item.put("dstMRN", key);
+									item.put("netType", "LTE-M");
+									if(parsedVal[2].equals("1")) {
+										item.put("connType", "polling");
+									}else if(parsedVal[1].equals("2")) {
+										item.put("connType", "push");
+									}
+									objList.add(item);
+
+								}
+							}while(keysIter.hasNext());
+						}
+						dataToReply = objList.toJSONString();
+
+						//System.out.println("Geocating polygon, srcMRN="+srcMRN+", dstMRN="+dstMRN+", geoLat="+geoLat+", geoLong="+geoLong);
+						//dataToReply = "[{\"exception\":\"absent MRN\"}]";
 					}
 					System.out.println("dataToReply : " + dataToReply);
 					pw.println(dataToReply);

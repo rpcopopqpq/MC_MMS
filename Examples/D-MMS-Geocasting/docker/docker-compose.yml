@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  mms_server:
+    image: ish128/mmsserver
+    container_name: mcp_mms
+    environment:
+        - ENV_MNS_PORT=8588
+        - ENV_RABBIT_MQ_PORT=5672
+        - ENV_RABBIT_MQ_MANAGING_PORT=15672
+        - ENV_REDIS_PORT=6379
+        - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
+        - ENV_RABBIT_MQ_USER=rabbitmq
+        - RABBIT_MQ_PASSWD=rabbitmq
+    ports:
+      - 8088:8088
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./mms/logs/:/app/mms/logs/
+      - ./mms/jar/:/app/mms/jar/
+    depends_on:
+      - mns_dummy
+      - rabbitmq-db
+      - redis
+
+  mns_dummy:
+    image: ish128/mnsdummy
+    container_name: mcp_mms_mnsdummy
+    ports:
+        - 8588:8588
+    stdin_open: true
+    tty: true
+
+  redis:
+    image: redis:5.0.3
+    container_name: mcp_mms_redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis:/data
+    command: redis-server /data/redis.conf
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  rabbitmq-db:
+    image: rabbitmq:3-management
+    container_name: mcp_mms_monitoring_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 8080:8080
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

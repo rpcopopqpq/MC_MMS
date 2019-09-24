@@ -21,3 +21,6 @@ MMSServer/target/logs/
 **/target/lib/**
 **/target/generated-sources/**
 **/target/classes/**
+.iml
+/.idea/*
+/**/*.iml

@@ -1,6 +1,8 @@
 #!/bin/sh
 
-java -cp /app/mms/jar/MMSServer.jar:/app/mms/lib/* kr.ac.kaist.mns_interaction.MNSDummy
+javac  -d . -cp ./lib/* ./java/MNSDummyForGeocastingTest.java
+chmod 755 MNSDummyForGeocastingTest.class
+java -cp .:./lib/* MNSDummyForGeocastingTest $1
 
 
 

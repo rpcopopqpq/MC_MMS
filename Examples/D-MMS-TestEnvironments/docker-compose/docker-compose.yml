@@ -2,14 +2,14 @@ version: '3'
 
 services:
   mms_server:
-    image: ish128/mmsserver
+    image: mmsserver
     container_name: mcp_mms
     environment:
+        - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
         - ENV_MNS_PORT=8588
         - ENV_RABBIT_MQ_PORT=5672
         - ENV_RABBIT_MQ_MANAGING_PORT=15672
         - ENV_REDIS_PORT=6379
-        - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
         - ENV_RABBIT_MQ_USER=rabbitmq
         - RABBIT_MQ_PASSWD=rabbitmq
     ports:
@@ -18,14 +18,12 @@ services:
     tty: true
     volumes:
       - ./mms/logs/:/app/mms/logs/
-      - ./mms/jar/:/app/mms/jar/
     depends_on:
-      - mns_dummy
+      - mcm
       - rabbitmq-db
       - redis
-
-  mns_dummy:
-    image: ish128/mnsdummy
+  mcm:
+    image: mnsdummy
     container_name: mcp_mms_mnsdummy
     ports:
         - 8588:8588

@@ -23,33 +23,19 @@ public class MNSDummyForGeocastingTest {
 	public static void main(String argv[]) throws Exception
 	{
 
-		int mnsPort = Integer.parseInt(argv[0]);
+		final int mnsPort = 8588;
+		String optionNo = argv==null || argv.length < 1 ? "1" : argv[0];
 		ServerSocket Sock = new ServerSocket(mnsPort);
 		int gcSuggestion = 0;
 
-		//Geocasting Test DATA
-		switch (mnsPort){
-			case 8588:
-				MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc1","127.0.0.1:0:1:1.0-1.0-1.0-1.0");
-				MRNtoIP.put("urn:mrn:smart-navi:device:geo-server1","127.0.0.1:0:2");
-				break;
-
-			case 8589:
-				MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc1","127.0.0.1:0:1:1.0-1.0-1.0-1.0");
-				MRNtoIP.put("urn:mrn:smart-navi:device:geo-server2","127.0.0.1:0:2");
-				break;
-
-			case 8590:
-				MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc1","127.0.0.1:0:1:1.0-1.0-1.0-1.0");
-				MRNtoIP.put("urn:mrn:smart-navi:device:geo-server3","127.0.0.1:0:2");
-				break;
-
-			default: throw new RuntimeException("unsupported port");
+		if(Integer.parseInt(optionNo)>3){
+			throw new RuntimeException("unsupported optionNo");
 		}
 
+		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc" + optionNo,"127.0.0.1:0:1:1.0-1.0-1.0-1.0");
+		MRNtoIP.put("urn:mrn:smart-navi:device:geo-server" + optionNo,"127.0.0.1:0:2");
+
 		System.out.println("Listen:"+mnsPort);
-
-
 		//-----------------------------------------------------
 
 		while(true)

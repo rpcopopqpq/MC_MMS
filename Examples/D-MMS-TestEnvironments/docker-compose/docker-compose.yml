@@ -1,42 +1,45 @@
 version: '3'
 
 services:
-  mms_server:
-    image: mmsserver
-    container_name: mcp_mms
-    environment:
-        - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
-        - ENV_MNS_PORT=8588
-        - ENV_RABBIT_MQ_PORT=5672
-        - ENV_RABBIT_MQ_MANAGING_PORT=15672
-        - ENV_REDIS_PORT=6379
-        - ENV_RABBIT_MQ_USER=rabbitmq
-        - RABBIT_MQ_PASSWD=rabbitmq
+  mms:
     ports:
-      - 8088:8088
+      - 8088
+    image: mmsserver:0.1
+    environment:
+        - ENV_MNS_HOST=mcm
+        - ENV_MNS_PORT=8588
+        - ENV_RABBIT_MQ_HOST=rabbitmq-db
+        - ENV_RABBIT_MQ_PORT=5672
+        - ENV_RABBIT_MQ_MANAGING_HOST=rabbitmq-db
+        - ENV_RABBIT_MQ_MANAGING_PORT=15672
+        - ENV_RABBIT_MQ_USER=rabbitmq
+        - ENV_RABBIT_MQ_PASSWD=rabbitmq
+        - ENV_REDIS_HOST=redis
+        - ENV_REDIS_PORT=6379
     stdin_open: true
     tty: true
-    volumes:
-      - ./mms/logs/:/app/mms/logs/
     depends_on:
       - mcm
       - rabbitmq-db
       - redis
+    networks:
+      - mcp-network
   mcm:
-    image: mnsdummy
-    container_name: mcp_mms_mnsdummy
+    image: mnsdummy:0.1
     ports:
-        - 8588:8588
+      - 8588
+    environment:
+      - serverNo=1
     stdin_open: true
     tty: true
 
   redis:
     image: redis:5.0.3
-    container_name: mcp_mms_redis
     ports:
-      - 6379:6379
-    volumes:
-      - ./redis:/data
+      - 6379
+    labels:
+      - "name=redis"
+      - "mode=standalone"
     command: redis-server /data/redis.conf
     stdin_open: true
     tty: true
@@ -44,14 +47,16 @@ services:
 
   rabbitmq-db:
     image: rabbitmq:3-management
-    container_name: mcp_mms_monitoring_rabbitmq
+    ports:
+      - 15672
+      - 5672
     environment:
       RABBITMQ_DEFAULT_USER: "rabbitmq"
       RABBITMQ_DEFAULT_PASS: "rabbitmq"
-    ports:
-      - 5672:5672
-      - 15672:15672
-      - 8080:8080
     stdin_open: true
     tty: true
     restart: unless-stopped
+
+networks:
+  mcp-network:
+    external: true

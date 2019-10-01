@@ -4,7 +4,7 @@ VOLUME /app/mms/logs
 EXPOSE 8088
 
 COPY start_mms.sh /app/mms/start_mms.sh
-COPY MMSServer*.jar /app/mms/MMSServer.jar
+COPY MC_MMS-*.jar /app/mms/MMSServer.jar
 COPY lib/ /app/mms/lib/
 COPY MMS-configuration/ /app/mms/MMS-configuration/
 

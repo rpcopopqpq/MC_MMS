@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  mms:
+    ports:
+      - 8088:8088
+    environment:
+      - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
+    volumes:
+      - ./project1/mms/logs/:/app/mms/logs/
+#    networks:
+#      - mcp-mms1_default
+
+  mcm:
+    ports:
+      - 8588:8588
+    environment:
+      - serverNo=1
+
+  redis:
+    ports:
+      - 6379:6379
+    volumes:
+      - ./project1/redis/:/data
+
+  rabbitmq-db:
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 8080:8080

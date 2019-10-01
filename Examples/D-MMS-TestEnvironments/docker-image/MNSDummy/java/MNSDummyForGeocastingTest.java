@@ -24,16 +24,16 @@ public class MNSDummyForGeocastingTest {
 	{
 
 		final int mnsPort = 8588;
-		String optionNo = argv==null || argv.length < 1 ? "1" : argv[0];
+		String serverNo = argv==null || argv.length < 1 ? "1" : argv[0];
 		ServerSocket Sock = new ServerSocket(mnsPort);
 		int gcSuggestion = 0;
 
-		if(Integer.parseInt(optionNo)>3){
-			throw new RuntimeException("unsupported optionNo");
+		if(Integer.parseInt(serverNo)>3){
+			throw new RuntimeException("unsupported serverNo");
 		}
 
-		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc" + optionNo,"127.0.0.1:0:1:1.0-1.0-1.0-1.0");
-		MRNtoIP.put("urn:mrn:smart-navi:device:geo-server" + optionNo,"127.0.0.1:0:2");
+		MRNtoIP.put("urn:mrn:kr:vessel:neonexsoft:sc" + serverNo,"127.0.0.1:0:1:1.0-1.0-1.0-1.0");
+		MRNtoIP.put("urn:mrn:smart-navi:device:geo-server" + serverNo,"127.0.0.1:0:2");
 
 		System.out.println("Listen:"+mnsPort);
 		//-----------------------------------------------------

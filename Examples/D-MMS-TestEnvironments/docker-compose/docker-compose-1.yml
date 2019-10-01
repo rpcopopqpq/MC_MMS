@@ -8,8 +8,6 @@ services:
       - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms1
     volumes:
       - ./project1/mms/logs/:/app/mms/logs/
-#    networks:
-#      - mcp-mms1_default
 
   mcm:
     ports:

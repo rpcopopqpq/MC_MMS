@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/mms/logs/mms-server.html</file>
+        <file>/app/mms/logs/mms-server.html</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- rollover daily -->
-            <fileNamePattern>/var/mms/logs/mms-server.html.%d{yyyy-MM-dd}.%i.zip</fileNamePattern>
+            <fileNamePattern>/app/mms/logs/mms-server.html.%d{yyyy-MM-dd}.%i.zip</fileNamePattern>
  
  			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
             	<maxFileSize>3MB</maxFileSize>

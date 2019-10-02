@@ -22,8 +22,9 @@ services:
       - mcm
       - rabbitmq-db
       - redis
-#    networks:
-#      - mcp-network
+    networks:
+      - mcp-network
+      - default
   mcm:
     image: mnsdummy:0.1
     ports:
@@ -57,11 +58,11 @@ services:
     tty: true
     restart: unless-stopped
 
-#networks:
-#  mcp-network:
-#    external: true
-
 networks:
-  default:
-    external:
-      name: mcp-network
+  mcp-network:
+    external: true
+
+#networks:
+#  default:
+#    external:
+#      name: mcp-network

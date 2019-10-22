@@ -1,0 +1,3 @@
+[submodule "Examples/D-MMS-TestEnvironments/docker-image/HomeManager/HomeManager"]
+	path = Examples/D-MMS-TestEnvironments/docker-image/HomeManager/HomeManager
+	url = https://github.com/SoonMyeong/HomeManager.git

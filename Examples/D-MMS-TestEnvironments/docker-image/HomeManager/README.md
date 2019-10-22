@@ -1,3 +1,6 @@
+#git submodule
+git submodule add https://github.com/SoonMyeong/HomeManager.git
+
 #build docker image
 docker build --no-cache --tag home-manager:0.1 .
 

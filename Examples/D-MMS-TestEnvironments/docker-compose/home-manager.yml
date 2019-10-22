@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  home-manager:
+    image: home-manager:0.1
+    ports:
+      - 8081:8081
+    volumes:
+      - ./home-manager/logs:/app/home-manager/logs
+    environment:
+      - dbHost=hmdb
+      - dbPort=3306
+      - dbUser=hm
+      - dbPassword=hm1234
+    stdin_open: true
+    tty: true
+    restart: always
+    depends_on:
+      - hmdb
+    networks:
+      - mcp-network
+      - default
+
+
+  hmdb:
+    image: mariadb:10.3
+    ports:
+      - 3307:3306
+    volumes:
+      - ./home-manager/hmdb:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=hmdb
+      - MYSQL_USER=hm
+      - MYSQL_PASSWORD=hm1234
+    stdin_open: true
+    tty: true
+    command:
+      '--innodb-flush-method=fsync --lower_case_table_names=1'
+
+networks:
+  mcp-network:
+    external: true
+

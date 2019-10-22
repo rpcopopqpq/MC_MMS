@@ -7,7 +7,7 @@ services:
     environment:
       - ENV_MMS_MRN=urn:mrn:smart-navi:device:mms2
     volumes:
-      - ./project2/mms/logs/:/app/mms/logs/
+      - ./instance2/mms/logs/:/app/mms/logs/
 
   mcm:
     ports:
@@ -15,15 +15,21 @@ services:
     environment:
       - serverNo=2
 
+  mcmdb:
+    ports:
+      - 4307:3306
+    volumes:
+      - ./instance2/mcmdb:/var/lib/mysql
+
   redis:
     ports:
       - 6390:6379
     volumes:
-      - ./project2/redis/:/data
+      - ./instance2/redis/:/data
 
   rabbitmq-db:
     ports:
       - 5673:5672
       - 15673:15672
-      - 8081:8080
+      - 9081:8080
 
